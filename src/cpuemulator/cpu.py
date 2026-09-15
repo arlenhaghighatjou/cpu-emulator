@@ -83,6 +83,7 @@ class CPU:
         self.flags = 0
         self.halted = False
         self.waiting = False
+        self.holdoff = False
         self.fault: str | None = None
         self.cycles = 0
         self.instructions = 0
@@ -97,7 +98,9 @@ class CPU:
         if self.halted:
             return 0
         pic = self.pic
-        if pic is not None and self.flags & FLAG_I and pic.pending & pic.mask:
+        if self.holdoff:
+            self.holdoff = False
+        elif pic is not None and self.flags & FLAG_I and pic.pending & pic.mask:
             irq = pic.take()
             self.waiting = False
             self._enter(VEC_IRQ_BASE + irq, self.pc)
@@ -421,6 +424,8 @@ class CPU:
         self.flags &= ~FLAG_I
 
     def _op_sti(self, d: Decoded, a: int, b: int) -> None:
+        if not self.flags & FLAG_I:
+            self.holdoff = True
         self.flags |= FLAG_I
 
     def _op_clc(self, d: Decoded, a: int, b: int) -> None:

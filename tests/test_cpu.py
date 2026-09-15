@@ -174,6 +174,21 @@ def test_irq_waits_for_interrupt_enable():
     assert cpu.pic.pending == 0
 
 
+def test_sti_holds_off_irqs_for_one_instruction():
+    cpu = boot(op("sti"), op("wait"), op("halt"))
+    cpu.bus.write16(0x0008, 0x0300)
+    cpu.bus.write16(0x0300, op("iret"))
+    cpu.pic.raise_irq(IRQ_TIMER)
+    cpu.step()
+    cpu.step()
+    assert cpu.waiting
+    assert cpu.interrupts == 0
+    cpu.step()
+    assert cpu.interrupts == 1
+    assert not cpu.waiting
+    assert cpu.bus.read16(cpu.sp) == 0x104
+
+
 def test_software_interrupt_and_iret_restore_flags():
     cpu = boot(op("stc"), op("int", 0, 1, 0), op("halt"))
     cpu.bus.write16(0x0010, 0x0300)

@@ -223,6 +223,10 @@ Hardware IRQs are latched by the interrupt controller. Between instructions, if 
 set, the lowest pending unmasked IRQ is taken and its pending bit is cleared. `wait`
 stops fetching until that happens.
 
+When `sti` changes I from clear to set, IRQs are not recognised until the instruction
+after it has run. `cli`, check for work, `sti`, `wait` is therefore race free: an IRQ
+that arrives after the check wakes the `wait` instead of being taken before it.
+
 A vector entry of zero is unhandled. The CPU then stops in the fault state and reports
 the cause. A fault raised while entering another interrupt is a double fault and also
 stops the CPU.
