@@ -21,7 +21,7 @@ cpuemulator asm src/cpuemulator/programs/samples/hello.asm -o hello.a7x -l hello
 cpuemulator dis hello.a7x
 ```
 
-`python -m cpuemulator` works the same way without installing.
+After installing, `python -m cpuemulator` works the same way.
 
 ## Tic-Tac-Toe
 
