@@ -4,6 +4,7 @@ KB_MASK = 15
 
 kb_head: .db 0
 kb_tail: .db 0
+kb_event: .db 0
 kb_buffer: .ds KB_MASK + 1
 
 kbd_init:
@@ -49,6 +50,23 @@ key_get:
     mov byte [kb_tail], r1
     sti
     ret
+
+key_event:
+    cli
+    mov r1, byte [kb_tail]
+    cmp r1, byte [kb_head]
+    jne key_get.take
+    mov r0, byte [kb_event]
+    test r0, r0
+    jz .sleep
+    mov byte [kb_event], 0
+    mov r0, 0
+    sti
+    ret
+.sleep:
+    sti
+    wait
+    jmp key_event
 
 key_poll:
     cli
