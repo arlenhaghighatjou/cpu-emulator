@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cpuemulator"
+version = "1.0.0"
+description = "A7-16 CPU emulator, assembler, debugger and Tic-Tac-Toe written in A7 assembly"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Arlen" }]
+
+[project.urls]
+Homepage = "https://arlenh7.com"
+
+[project.scripts]
+cpuemulator = "cpuemulator.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+cpuemulator = ["programs/**/*.asm", "programs/**/*.inc"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
