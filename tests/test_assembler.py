@@ -124,11 +124,19 @@ def test_includes_resolve_relative_to_the_including_file(tmp_path):
     assert image.segments[0][1][2:4] == (42).to_bytes(2, "little")
 
 
-def test_recursive_include_is_an_error(tmp_path):
-    (tmp_path / "a.asm").write_text('.include "b.asm"\n')
-    (tmp_path / "b.asm").write_text('.include "a.asm"\n')
-    with pytest.raises(AsmError, match="recursive include"):
-        assemble_file(tmp_path / "a.asm")
+def test_files_are_included_once(tmp_path):
+    (tmp_path / "a.asm").write_text('.include "b.asm"\n.include "c.asm"\nnop\n')
+    (tmp_path / "b.asm").write_text('.include "c.asm"\n.include "a.asm"\n')
+    (tmp_path / "c.asm").write_text("VALUE = 1\n.dw VALUE\n")
+    image = assemble_file(tmp_path / "a.asm")
+    assert image.segments == [(0x100, b"\x01\x00\x00\x00")]
+
+
+def test_missing_include_is_reported(tmp_path):
+    (tmp_path / "main.asm").write_text('\n.include "nope.inc"\n')
+    with pytest.raises(AsmError, match=r"include file 'nope\.inc' not found") as info:
+        assemble_file(tmp_path / "main.asm")
+    assert info.value.line == 2
 
 
 def test_hardware_library_is_on_the_include_path():

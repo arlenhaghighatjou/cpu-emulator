@@ -66,6 +66,7 @@ class Assembler:
         self._output = bytearray(ADDRESS_SPACE)
         self._used = bytearray(ADDRESS_SPACE)
         self._files: dict[str, int] = {}
+        self._included: set[str] = set()
         self._lines: dict[int, tuple[int, int]] = {}
         self._entry: int | None = None
         self._first: int | None = None
@@ -78,11 +79,11 @@ class Assembler:
             source = path.read_text(encoding="utf-8")
         except OSError as exc:
             raise AsmError(f"cannot read {path}: {exc.strerror}", str(path)) from None
-        self._read(source, str(path), (str(path.resolve()),))
+        self._read(source, str(path), str(path.resolve()))
         return self._build()
 
     def assemble(self, source: str, file: str = "<source>") -> Image:
-        self._read(source, file, ())
+        self._read(source, file, None)
         return self._build()
 
     def listing_text(self) -> str:
@@ -96,15 +97,16 @@ class Assembler:
                 rows.append(f"{address:04X}  {chunk:<17}  {source}".rstrip())
         return "\n".join(rows)
 
-    def _read(self, source: str, file: str, stack: tuple[str, ...]) -> None:
+    def _read(self, source: str, file: str, key: str | None) -> None:
         self.sources[file] = source.splitlines()
+        if key is not None:
+            self._included.add(key)
         for statement in parse(tokenize(source, file)):
             if isinstance(statement, Directive) and statement.name == ".include":
                 path = self._include(statement, file)
-                key = str(path.resolve())
-                if key in stack:
-                    raise statement.token.error(f"recursive include of {path}")
-                self._read(path.read_text(encoding="utf-8"), str(path), (*stack, key))
+                included = str(path.resolve())
+                if included not in self._included:
+                    self._read(path.read_text(encoding="utf-8"), str(path), included)
                 continue
             if isinstance(statement, Label) and not statement.name.startswith("."):
                 self._scope = statement.name
